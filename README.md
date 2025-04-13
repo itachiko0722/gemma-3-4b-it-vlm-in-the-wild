@@ -1,4 +1,4 @@
-# gemma-3-4b-vlm-in-the-woeld
+# gemma-3-4b-vlm-in-the-wild
 
 ## Overview
 This Jupyter notebook demonstrates how to evaluate Google's Gemma-3-4b-it model on Japanese vision-language tasks using the "SakanaAI/JA-VLM-Bench-In-the-Wild" dataset. The notebook implements a pipeline to process images with associated Japanese questions and generate answers using the vision-language model.

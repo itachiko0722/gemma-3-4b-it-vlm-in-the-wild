@@ -31,7 +31,7 @@ The SakanaAI/JA-VLM-Bench-In-the-Wild dataset contains real-world Japanese image
 4. Run the inference pipeline on the test set
 5. Analyze the results in the generated JSONL file
 
-## Output
+## Output(gemma3_inference_vlm_wild.jsonl)
 The notebook generates a JSONL file containing:
 - Original page and image URLs
 - Questions about the images

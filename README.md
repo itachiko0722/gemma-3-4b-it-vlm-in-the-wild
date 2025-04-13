@@ -1,101 +1,63 @@
-# gemma-3-4b-vlm-in-the-world
+# gemma-3-4b-vqa
 
-概要
-このリポジトリでは、SakanaAI/JA-VG-VQA-500 データセットと Google の Gemma3 モデル (google/gemma-3-4b-it) を利用し、
-日本語ビジョンランゲージ（VQA: Visual Question Answering）推論を行うためのサンプルコードを提供しています。
+This repository provides sample code for performing Japanese Vision-Language (VQA: Visual Question Answering) inference using the [SakanaAI/JA-VG-VQA-500](https://huggingface.co/datasets/SakanaAI/JA-VG-VQA-500) dataset and Google's Gemma3 model ([google/gemma-3-4b-it](https://huggingface.co/google/gemma-3-4b-it)).
 
-ファイル構成
-main.py
-JA-VG-VQA-500 データセットから画像データと対応する複数の Q&A を取得し、Gemma3 へ入力 → モデル出力を JSONL 形式で保存するサンプルスクリプト。
+---
 
-環境構築手順
-Python のインストール
-3.8 以上を推奨します（3.7 以下の場合、一部のライブラリで問題が起きる可能性があります）。
+## File Structure
 
-必要パッケージのインストール
-以下のように pip を利用してインストールします:
+- **main.py**  
+  A sample script that retrieves images and corresponding multiple Q&A from the JA-VG-VQA-500 dataset, passes them to Gemma3, and saves the model outputs in JSONL format.
 
-bash
-コピーする
-pip install --upgrade pip
-pip install torch transformers datasets Pillow
-transformers : Gemma3 モデルの読み込みに利用
+---
 
-datasets : JA-VG-VQA-500 の読み込みに利用
+## Environment Setup Instructions
 
-Pillow : 画像の保存や操作に利用
+### 1. Install Python
+Python version 3.8 or higher is recommended (versions 3.7 and below may encounter issues with some libraries).
 
-HF Token の用意（必要に応じて）
-Gemma3 モデルを読み込む際、Hugging Face Hub の認証が必要な場合があります。
-事前に Hugging Face 公式 でアクセストークンを取得し、
-端末上で huggingface-cli login を行う、またはスクリプト内に use_auth_token=True として埋め込んでください。
+### 2. Install Required Packages
+```bash  
+git clone <repository URL>  
+cd gemma-3-4b-vqa  
+```
 
-使い方
-データセットとモデルを読み込み、推論を実行する
-以下のコマンドでスクリプトを実行します:
+The script sequentially reads (image, question) pairs from the test split of JA-VG-VQA-500.
 
-bash
-コピーする
-python main.py
-スクリプトでは、JA-VG-VQA-500 の test スプリットから順に (画像・質問) を読み込みます。
+To avoid EXIF processing errors from Pillow (PIL), images are loaded as raw bytes by specifying `decode=False`.
 
-Pillow (PIL) の EXIF 処理によるエラーを回避するために decode=False を指定し、画像を raw bytes として読み込んでいます。
+The binary image is temporarily saved as a file (`temp_***.jpg`) and passed to Gemma3 for inference using its file path.
 
-読み込んだバイナリ画像を一時ファイルに保存 → Gemma3 にファイルパスを渡す形で推論を行います。
+---
 
-出力ファイル (gemma3_output.jsonl)
-推論結果は gemma3_output.jsonl に書き出されます。
+### Output File (gemma3_output.jsonl)
+Inference results are saved to `gemma3_output.jsonl`. Each entry is JSON-formatted with the following fields:
 
-image_id : 入力画像の ID
+- `image_id`: ID of the input image
+- `qa_id`: Unique ID for each question
+- `url`: External URL of the image
+- `question`: Question text
+- `pred_answer`: Gemma3's inferred answer
+- `gt_answer`: Ground truth answer from the dataset (for comparison)
 
-qa_id : 質問ごとのユニーク ID
-
-url : 画像の外部 URL
-
-question : 質問文
-
-pred_answer : Gemma3 の推論回答
-
-gt_answer : データセットのアノテーションとしての正解（比較用）
-
-出力例（1 QA あたり1行の JSON 形式）:
-
-json
-コピーする
+Output Example (one QA per JSON line):
+```json
 {
   "image_id": 100,
   "qa_id": 10674688,
   "url": "https://example.com/image.jpg",
-  "question": "どんな天候ですか？",
-  "pred_answer": "晴れの日",
-  "gt_answer": "晴天"
+  "question": "What is the weather like?",
+  "pred_answer": "Sunny",
+  "gt_answer": "Clear weather"
 }
-トラブルシューティング
-PIL.ExifTags に関するエラー
-デフォルト設定では、datasets が自動で画像を PIL Image に変換し、EXIF 情報にアクセスしようとしてエラーになるケースがあります。
-そのため、本スクリプトでは decode=False を使い、EXIF 処理を回避しています。
+```
 
-Hugging Face Token が無い/認証エラー
-必要に応じて use_auth_token=False に切り替えるか、huggingface-cli login でトークンを設定してください。
+The Gemma3 4B model requires substantial GPU memory. If you encounter memory issues, consider using `device_map="auto"` to automatically split processing between CPU and GPU, or use an instance with more GPU memory.
 
-Out of Memory エラー
+Temporary File Cleanup
+The script attempts to delete the temporary `temp_***.jpg` files after inference, but files might remain depending on your environment. Manually clean these up if necessary.
 
-Gemma3 4B モデルはある程度の GPU メモリを要します。
+### License
+The JA-VG-VQA-500 dataset follows the SakanaAI/JA-VG-VQA-500 dataset license.
 
-もしメモリ不足の場合は device_map="auto" を利用して CPU と GPU を自動的に切り分けるか、より大きな GPU インスタンスを利用してください。
-
-一時ファイルの削除
-スクリプトでは推論後に temp_***.jpg を削除していますが、環境によってはファイルが残る場合があります。
-必要に応じて手動でクリーンアップしてください。
-
-ライセンス
-JA-VG-VQA-500 データセットは SakanaAI/JA-VG-VQA-500 のライセンスに従います。
-
-Gemma3 モデルは Google 提供のライセンスに従ってご利用ください。
-
-謝辞
-Hugging Face やコミュニティによる変換・ホスティングの貢献
-
-SakanaAI/JA-VG-VQA-500 データセット
-
-その他多くのオープンソースプロジェクト
+The Gemma3 model usage is governed by Google's provided license.
